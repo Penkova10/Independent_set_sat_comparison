@@ -141,10 +141,31 @@ Independent-set-sat-comparison/
 │   └── plots/
 │
 ├── tests/
+│   ├── test_backtracking.py
+│   ├── test_sat_encoding.py
+│   └── test_consistency.py
+│
 ├── main.py
 ├── requirements.txt
 └── README.md
 ```
+## Тестирање
+
+За проверка на коректноста се користат автоматски тестови со `pytest`.
+
+Тестовите опфаќаат:
+
+- позитивни и негативни случаи за backtracking алгоритмот
+- позитивни и негативни случаи за SAT енкодирањето
+- проверка дека Backtracking, MiniSat и CaDiCaL даваат ист резултат за однапред познати инстанци
+
+Тестовите се стартуваат со:
+
+```bash
+pytest
+```
+
+Во моменталната верзија сите 8 тестови успешно поминуваат.
 
 ## Инсталација
 
@@ -172,3 +193,5 @@ python main.py
 
 - `python-sat`
 - `matplotlib`
+- `pytest`
+
