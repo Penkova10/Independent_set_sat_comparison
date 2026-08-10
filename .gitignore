@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.idea/
+*.log
+
+results/benchmark_results.csv
+results/pilot_results.csv
