@@ -10,12 +10,16 @@ def solve_with_cadical(clauses, num_vertices):
 
         model = solver.get_model()
 
+        # Set овозможува поефикасна проверка кои SAT променливи
+        # што ги претставуваат оригиналните јазли имаат вредност True.
+        model_set = set(model)
+
         selected_vertices = []
 
         for vertex in range(num_vertices):
             variable = vertex + 1
 
-            if variable in model:
+            if variable in model_set:
                 selected_vertices.append(vertex)
 
         return True, selected_vertices

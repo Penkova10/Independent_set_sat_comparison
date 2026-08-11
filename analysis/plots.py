@@ -1,4 +1,6 @@
 import os
+from statistics import median
+
 import matplotlib.pyplot as plt
 
 from analysis.statistics import (
@@ -67,7 +69,7 @@ def plot_time_by_density(filename="results/final_results.csv"):
 
     plt.xlabel("Edge probability (p)")
     plt.ylabel("Median total time (seconds)")
-    plt.title("Runtime by Graph Density")
+    plt.title("Runtime by Edge Probability")
     plt.yscale("log")
     plt.legend()
     plt.grid(True)
@@ -100,6 +102,7 @@ def plot_method_wins(filename="results/final_results.csv"):
     plt.savefig("results/plots/method_wins.png")
     plt.close()
 
+
 def plot_encoding_size(filename="results/final_results.csv"):
     rows = load_results(filename)
 
@@ -114,8 +117,6 @@ def plot_encoding_size(filename="results/final_results.csv"):
 
     median_variables = []
     median_clauses = []
-
-    from statistics import median
 
     for n in n_values:
         rows_for_n = [
@@ -161,6 +162,7 @@ def plot_encoding_size(filename="results/final_results.csv"):
     plt.tight_layout()
     plt.savefig("results/plots/encoding_size.png")
     plt.close()
+
 
 def generate_all_plots(filename="results/final_results.csv"):
     plot_time_by_n(filename)

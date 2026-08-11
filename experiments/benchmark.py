@@ -14,11 +14,17 @@ from experiments.experiment_config import (
     EDGE_PROBABILITIES,
     SEEDS,
     K_RATIOS,
-    REPETITIONS
+    REPETITIONS,
+    BACKTRACKING_TIMEOUT
 )
 
 
-def benchmark_instance(graph, k):
+def benchmark_instance(
+    graph,
+    k,
+    repetitions=REPETITIONS,
+    backtracking_timeout_seconds=BACKTRACKING_TIMEOUT
+):
     results = {}
 
     # --------------------------------------------------
@@ -28,9 +34,9 @@ def benchmark_instance(graph, k):
     backtracking_times = []
     backtracking_found = None
     backtracking_solution = None
-    backtracking_timeout = False
+    backtracking_timed_out = False
 
-    for _ in range(REPETITIONS):
+    for _ in range(repetitions):
         try:
             start = perf_counter()
 
@@ -38,7 +44,7 @@ def benchmark_instance(graph, k):
                 independent_set_backtracking(
                     graph,
                     k,
-                    timeout_seconds=10
+                    timeout_seconds=backtracking_timeout_seconds
                 )
             )
 
@@ -46,26 +52,32 @@ def benchmark_instance(graph, k):
             backtracking_times.append(elapsed_time)
 
         except TimeoutError:
-            backtracking_timeout = True
+            backtracking_timed_out = True
             backtracking_found = None
             backtracking_solution = []
             break
 
-    if backtracking_timeout:
-        backtracking_time = 10.0
+    if backtracking_timed_out:
+        # Кај timeout го запишуваме лимитот како цензурирано време,
+        # а не го претставуваме како успешно измерено време на решавање.
+        backtracking_time = float(backtracking_timeout_seconds)
+        backtracking_valid = None
     else:
         backtracking_time = median(backtracking_times)
+
+        # Валидацијата се прави надвор од мереното време на алгоритмот.
+        backtracking_valid = (
+            is_valid_solution(graph, backtracking_solution, k)
+            if backtracking_found
+            else True
+        )
 
     results["backtracking"] = {
         "found": backtracking_found,
         "solution": backtracking_solution,
         "time": backtracking_time,
-        "timeout": backtracking_timeout,
-        "valid": (
-            is_valid_solution(graph, backtracking_solution, k)
-            if backtracking_found
-            else True
-        )
+        "timeout": backtracking_timed_out,
+        "valid": backtracking_valid
     }
 
     # --------------------------------------------------
@@ -78,7 +90,7 @@ def benchmark_instance(graph, k):
     num_variables = None
     num_clauses = None
 
-    for _ in range(REPETITIONS):
+    for _ in range(repetitions):
         start = perf_counter()
 
         clauses, num_variables, num_clauses = create_sat_encoding(
@@ -99,7 +111,7 @@ def benchmark_instance(graph, k):
     minisat_found = None
     minisat_solution = None
 
-    for _ in range(REPETITIONS):
+    for _ in range(repetitions):
         start = perf_counter()
 
         minisat_found, minisat_solution = solve_with_minisat(
@@ -135,7 +147,7 @@ def benchmark_instance(graph, k):
     cadical_found = None
     cadical_solution = None
 
-    for _ in range(REPETITIONS):
+    for _ in range(repetitions):
         start = perf_counter()
 
         cadical_found, cadical_solution = solve_with_cadical(
@@ -174,6 +186,8 @@ def run_experiments():
             for seed in SEEDS:
                 for k_ratio in K_RATIOS:
 
+                    # Моменталните конфигурации даваат целобројни вредности за k.
+                    # int() намерно го задржува постојното заокружување надолу.
                     k = max(1, int(n * k_ratio))
 
                     graph = generate_random_graph(
@@ -182,7 +196,12 @@ def run_experiments():
                         seed=seed
                     )
 
-                    results = benchmark_instance(graph, k)
+                    results = benchmark_instance(
+                        graph,
+                        k,
+                        repetitions=REPETITIONS,
+                        backtracking_timeout_seconds=BACKTRACKING_TIMEOUT
+                    )
 
                     all_results.append({
                         "n": n,
@@ -204,7 +223,10 @@ def save_results_to_csv(
     all_results,
     filename="results/benchmark_results.csv"
 ):
-    os.makedirs("results", exist_ok=True)
+    # Ако е зададена сопствена папка во filename, ја креираме таа папка.
+    output_directory = os.path.dirname(filename)
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
 
     with open(
         filename,
@@ -272,12 +294,16 @@ def save_results_to_csv(
                     solver_time,
                     total_time
                 ])
+
+
 def run_pilot_experiments():
     from experiments.pilot_config import (
         PILOT_VERTEX_COUNTS,
         PILOT_EDGE_PROBABILITIES,
         PILOT_SEEDS,
-        PILOT_K_RATIOS
+        PILOT_K_RATIOS,
+        PILOT_REPETITIONS,
+        PILOT_BACKTRACKING_TIMEOUT
     )
 
     all_results = []
@@ -287,6 +313,7 @@ def run_pilot_experiments():
             for seed in PILOT_SEEDS:
                 for k_ratio in PILOT_K_RATIOS:
 
+                    # Истиот начин на пресметка на k се користи во сите режими.
                     k = max(1, int(n * k_ratio))
 
                     graph = generate_random_graph(
@@ -295,7 +322,12 @@ def run_pilot_experiments():
                         seed=seed
                     )
 
-                    results = benchmark_instance(graph, k)
+                    results = benchmark_instance(
+                        graph,
+                        k,
+                        repetitions=PILOT_REPETITIONS,
+                        backtracking_timeout_seconds=PILOT_BACKTRACKING_TIMEOUT
+                    )
 
                     all_results.append({
                         "n": n,
@@ -312,12 +344,15 @@ def run_pilot_experiments():
 
     return all_results
 
+
 def run_final_experiments():
     from experiments.final_config import (
         FINAL_VERTEX_COUNTS,
         FINAL_EDGE_PROBABILITIES,
         FINAL_SEEDS,
-        FINAL_K_RATIOS
+        FINAL_K_RATIOS,
+        FINAL_REPETITIONS,
+        BACKTRACKING_TIMEOUT as FINAL_BACKTRACKING_TIMEOUT
     )
 
     all_results = []
@@ -327,6 +362,7 @@ def run_final_experiments():
             for seed in FINAL_SEEDS:
                 for k_ratio in FINAL_K_RATIOS:
 
+                    # Истиот начин на пресметка на k се користи во сите режими.
                     k = max(1, int(n * k_ratio))
 
                     graph = generate_random_graph(
@@ -335,7 +371,12 @@ def run_final_experiments():
                         seed=seed
                     )
 
-                    results = benchmark_instance(graph, k)
+                    results = benchmark_instance(
+                        graph,
+                        k,
+                        repetitions=FINAL_REPETITIONS,
+                        backtracking_timeout_seconds=FINAL_BACKTRACKING_TIMEOUT
+                    )
 
                     all_results.append({
                         "n": n,

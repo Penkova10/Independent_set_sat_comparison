@@ -1,5 +1,6 @@
 from graph.graph import Graph
 from algorithms.backtracking import independent_set_backtracking
+from algorithms.validator import is_valid_solution
 
 
 def test_backtracking_positive_case():
@@ -14,6 +15,9 @@ def test_backtracking_positive_case():
 
     assert found is True
     assert len(solution) >= 2
+
+    # Вратеното решение мора навистина да биде валидно independent set решение.
+    assert is_valid_solution(graph, solution, 2) is True
 
 
 def test_backtracking_negative_case():

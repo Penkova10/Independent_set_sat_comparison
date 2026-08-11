@@ -1,6 +1,7 @@
 from time import perf_counter
 
-from algorithms.validator import is_independent_set
+# Ова нема да ни биде потребно веќе
+# from algorithms.validator import is_independent_set
 
 
 def independent_set_backtracking(graph, k, timeout_seconds=None):
@@ -36,13 +37,20 @@ def independent_set_backtracking(graph, k, timeout_seconds=None):
         vertex = vertices[index]
 
         # Пробај да го избереш тековниот јазол
-        candidate = selected + [vertex]
+        # Постоечкиот 'selected' set веќе е познато дека е independant,
+        # Па, потребно е само да провериме дали со новите јазли ќе настане конфликт
+        # меѓу нив и некој од веќе селектираните јазли
+        can_include = all(
+            not graph.are_adjacent(vertex, selected_vertex)
+            for selected_vertex in selected
+        )
 
-        if is_independent_set(graph, candidate):
+        if can_include:
             found, solution = backtrack(
                 index + 1,
-                candidate
+                selected + [vertex]
             )
+
 
             if found:
                 return True, solution
