@@ -82,18 +82,47 @@ def count_wins(rows):
     wins = defaultdict(int)
 
     for instance_rows in instances.values():
-        fastest = min(
-            instance_rows,
-            key=lambda row: row["total_time"]
+
+        # Ги групираме повторувањата за истата инстанца
+        # според методот што бил користен.
+        times_by_method = defaultdict(list)
+        timed_out_methods = set()
+
+        for row in instance_rows:
+            method = row["method"]
+
+            if row["timeout"]:
+                timed_out_methods.add(method)
+            else:
+                times_by_method[method].append(row["total_time"])
+
+        # Победникот се определува според медијаната на времињата,
+        # а не според едно случајно најбрзо извршување.
+        median_times = {
+            method: median(times)
+            for method, times in times_by_method.items()
+            if times and method not in timed_out_methods
+        }
+
+        if not median_times:
+            continue
+
+        fastest_method = min(
+            median_times,
+            key=median_times.get
         )
 
-        wins[fastest["method"]] += 1
+        wins[fastest_method] += 1
 
     return dict(wins)
 
 
 def all_results_valid(rows):
-    return all(row["valid"] for row in rows)
+    return all(
+        row["valid"]
+        for row in rows
+        if not row["timeout"]
+    )
 
 
 def print_summary(filename="results/final_results.csv"):
@@ -103,7 +132,7 @@ def print_summary(filename="results/final_results.csv"):
     print()
 
     print("Total rows:", len(rows))
-    print("All results valid:", all_results_valid(rows))
+    print("All completed results valid:", all_results_valid(rows))
     print("Backtracking timeouts:", count_timeouts(rows))
 
     print("\nMedian total time by n:")
