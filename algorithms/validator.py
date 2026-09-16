@@ -3,6 +3,9 @@ def is_independent_set(graph, vertices):
     if len(vertices) != len(set(vertices)):
         return False
 
+    if any(v < 0 or v >= graph.num_vertices for v in vertices):
+        return False
+
     for i in range(len(vertices)):
         for j in range(i + 1, len(vertices)):
             if graph.are_adjacent(vertices[i], vertices[j]):
