@@ -18,9 +18,9 @@ Decision верзијата на Independent Set проблемот го пос�
 
 Independent Set е NP-комплетен проблем.
 
-## Имплементирани пристапи
+## Имплементирани методи
 
-Во проектот се споредуваат три пристапи:
+Во проектот се споредуваат три методи: еден класичен backtracking метод и два SAT-базирани методи со MiniSat и CaDiCaL.
 
 ### 1. Backtracking
 
@@ -144,6 +144,9 @@ Independent-set-sat-comparison/
 │   ├── test_backtracking.py
 │   ├── test_sat_encoding.py
 │   └── test_consistency.py
+│
+├── report/
+│   └── Independent_Set_Report.pdf
 │
 ├── main.py
 ├── requirements.txt
